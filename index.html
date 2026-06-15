@@ -473,6 +473,8 @@ body {
     navGrid.querySelectorAll('.nav-dot').forEach(function(el) {
       el.addEventListener('click', function() {
         currentIndex = parseInt(el.dataset.qid);
+        navOpen = false;
+        navPanel.classList.add('hidden');
         render();
       });
     });
