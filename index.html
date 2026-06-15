@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="答题器">
+<title>答题器</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #ecedf0;
+  color: #2c3e50;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Top bar — sticky wrapper */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Header */
+.header {
+  background: #1a3a5c;
+  color: #fff;
+  padding: 14px 16px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.header h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+/* Progress */
+.progress-wrap {
+  background: #fff;
+  border-bottom: 1px solid #d5d8dc;
+  padding: 10px 16px;
+}
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  margin-bottom: 6px;
+}
+.progress-bar {
+  height: 4px;
+  background: #e0e3e6;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: #2c5f8a;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Main */
+.main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Card */
+.card {
+  background: #fff;
+  border-radius: 6px;
+  padding: 20px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border: 1px solid #e0e3e6;
+}
+
+/* Question */
+.q-type-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 3px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.q-type-badge.single { background: #e8f0fe; color: #1a3a5c; }
+.q-type-badge.truefalse { background: #fef3e2; color: #8b6914; }
+.q-type-badge.multi { background: #e8f5e9; color: #2d5d2d; }
+
+.q-number {
+  font-size: 0.85rem;
+  color: #95a5a6;
+  margin-bottom: 8px;
+}
+.q-text {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #2c3e50;
+  margin-bottom: 18px;
+}
+
+/* Options */
+.options { list-style: none; }
+.option {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border: 1px solid #d5d8dc;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.option:active { background: #f0f2f5; }
+.option.selected {
+  border-color: #2c5f8a;
+  background: #eef3f8;
+}
+.option.correct {
+  border-color: #2d7d46;
+  background: #edf7f0;
+}
+.option.wrong {
+  border-color: #8b0000;
+  background: #fdf0f0;
+}
+.option-marker {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #bdc3c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #7f8c8d;
+  flex-shrink: 0;
+  margin-right: 12px;
+  margin-top: 1px;
+}
+.option.selected .option-marker {
+  border-color: #2c5f8a;
+  background: #2c5f8a;
+  color: #fff;
+}
+.option.correct .option-marker {
+  border-color: #2d7d46;
+  background: #2d7d46;
+  color: #fff;
+}
+.option.wrong .option-marker {
+  border-color: #8b0000;
+  background: #8b0000;
+  color: #fff;
+}
+/* Make multi-select markers square-ish */
+.option.multi-select .option-marker { border-radius: 3px; }
+
+/* True/False buttons */
+.tf-row { display: flex; gap: 16px; }
+.tf-btn {
+  flex: 1;
+  padding: 16px;
+  text-align: center;
+  border: 2px solid #d5d8dc;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+  color: #2c3e50;
+}
+.tf-btn:active { background: #f0f2f5; }
+.tf-btn.selected { border-color: #2c5f8a; background: #eef3f8; }
+.tf-btn.correct { border-color: #2d7d46; background: #edf7f0; color: #2d7d46; }
+.tf-btn.wrong { border-color: #8b0000; background: #fdf0f0; color: #8b0000; }
+
+/* Feedback */
+.feedback {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct { background: #edf7f0; color: #2d7d46; border: 1px solid #c3e6cb; }
+.feedback.wrong { background: #fdf0f0; color: #8b0000; border: 1px solid #f5c6cb; }
+
+/* Button */
+.btn {
+  display: inline-block;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: opacity 0.15s;
+}
+.btn:active { opacity: 0.8; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: #2c5f8a; color: #fff; }
+.btn-next { width: 100%; margin-top: 12px; }
+.btn-restart { background: #1a3a5c; color: #fff; }
+
+/* Result page */
+.result-wrap { text-align: center; }
+.result-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; color: #1a3a5c; }
+.result-total { font-size: 3rem; font-weight: 700; color: #1a3a5c; margin: 16px 0; }
+.result-total span { font-size: 1rem; color: #7f8c8d; }
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+.result-table th, .result-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e0e3e6;
+  text-align: center;
+}
+.result-table th { background: #f5f6f8; font-weight: 600; color: #2c3e50; }
+.result-table td { color: #555; }
+.result-score { font-weight: 700; }
+.result-score.good { color: #2d7d46; }
+.result-score.ok { color: #8b6914; }
+.result-score.low { color: #8b0000; }
+
+/* Welcome */
+.welcome-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.welcome-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: #1a3a5c; }
+.welcome-desc {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.welcome-info {
+  font-size: 0.85rem;
+  color: #95a5a6;
+  line-height: 1.8;
+  margin-bottom: 20px;
+}
+
+/* Utility */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Sticky top bar -->
+  <div class="top-bar">
+    <div class="header"><h1>答 题 器</h1></div>
+    <div class="progress-wrap hidden" id="progressWrap">
+    <div class="progress-info">
+      <span id="progressLabel">第 1/300 题</span>
+      <span id="scoreLabel">已答对：0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  </div><!-- end top-bar -->
+
+  <!-- Main content area -->
+  <div class="main" id="mainContent"></div>
+</div>
+
+<script src="questions.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  // ── State ──────────────────────────────────
+  var TOTAL = QUESTIONS.length;
+  var currentIndex = 0;
+  var answers = {};        // { qid: userAnswer }
+  var score = 0;
+  var answered = {};       // { qid: true } — track if question has been answered
+
+  var main = document.getElementById('mainContent');
+  var progressWrap = document.getElementById('progressWrap');
+  var progressFill = document.getElementById('progressFill');
+  var progressLabel = document.getElementById('progressLabel');
+  var scoreLabel = document.getElementById('scoreLabel');
+
+  // ── Render ─────────────────────────────────
+  function render() {
+    if (currentIndex === 0) {
+      showWelcome();
+    } else if (currentIndex > TOTAL) {
+      showResult();
+    } else {
+      showQuestion();
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function showWelcome() {
+    progressWrap.classList.add('hidden');
+    main.innerHTML =
+      '<div class="card welcome-card">' +
+        '<div class="text-center welcome-icon">📋</div>' +
+        '<div class="text-center welcome-title">安全生产知识答题</div>' +
+        '<div class="welcome-desc text-center">本答题共 <b>300</b> 道题，其中单选题 150 道、判断题 100 道、多选题 50 道，请按顺序作答。</div>' +
+        '<div class="welcome-info text-center">' +
+          '• 单选：选择一个正确答案<br>' +
+          '• 判断：选择正确或错误<br>' +
+          '• 多选：选择所有正确答案<br>' +
+        '</div>' +
+        '<div class="text-center">' +
+          '<button class="btn btn-primary" id="btnStart">开始答题</button>' +
+        '</div>' +
+      '</div>';
+    document.getElementById('btnStart').addEventListener('click', function() {
+      currentIndex = 1;
+      render();
+    });
+  }
+
+  function showQuestion() {
+    progressWrap.classList.remove('hidden');
+    var q = QUESTIONS[currentIndex - 1];
+    var qid = q.id;
+
+    updateProgress();
+
+    var answeredThis = answered[qid];
+    var userAns = answers[qid] || '';
+    var userSet = new Set();
+    if (typeof userAns === 'string') userSet = new Set(userAns.split(''));
+    else if (Array.isArray(userAns)) userSet = new Set(userAns);
+
+    var html = '<div class="card">';
+
+    // Badge
+    var badgeClass = q.type === 'single' ? 'single' : (q.type === 'truefalse' ? 'truefalse' : 'multi');
+    var badgeText = q.type === 'single' ? '单选题' : (q.type === 'truefalse' ? '判断题' : '多选题');
+    html += '<span class="q-type-badge ' + badgeClass + '">' + badgeText + '</span>';
+
+    // Number + text
+    html += '<div class="q-number">第 ' + currentIndex + ' / ' + TOTAL + ' 题</div>';
+    html += '<div class="q-text">' + escapeHtml(q.text) + '</div>';
+
+    if (q.type === 'truefalse') {
+      // True/False buttons
+      html += '<div class="tf-row">';
+      html += buildTFButton('√', '正确', userAns, answeredThis, q.answer);
+      html += buildTFButton('×', '错误', userAns, answeredThis, q.answer);
+      html += '</div>';
+    } else {
+      // Options list
+      html += '<div class="options">';
+      for (var i = 0; i < q.options.length; i++) {
+        var opt = q.options[i];
+        var sel = userSet.has(opt.letter);
+        var cls = 'option';
+        if (q.type === 'multi') cls += ' multi-select'; // placeholder for future
+        if (answeredThis) {
+          var isCorrectOpt = q.answer.indexOf(opt.letter) !== -1;
+          if (sel && isCorrectOpt) cls += ' correct';
+          else if (sel && !isCorrectOpt) cls += ' wrong';
+          else if (!sel && isCorrectOpt) cls += ' correct'; // show missed correct answers
+        } else if (sel) {
+          cls += ' selected';
+        }
+        html += '<div class="' + cls + '" data-letter="' + opt.letter + '" data-multi="' + (q.type === 'multi' ? '1' : '0') + '">';
+        html += '<span class="option-marker">' + opt.letter + '</span>';
+        html += '<span>' + escapeHtml(opt.text) + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    // Multi-select hint
+    if (q.type === 'multi' && !answeredThis) {
+      html += '<div style="font-size:0.8rem;color:#95a5a6;margin-top:8px;">可多选，点击选项进行选择</div>';
+    }
+
+    // Feedback after answering
+    if (answeredThis) {
+      var correct = userAns === q.answer || (Array.isArray(userAns) && userAns.sort().join('') === q.answer);
+      var fbClass = correct ? 'correct' : 'wrong';
+      var fbText = correct ? '✓ 回答正确' : '✗ 回答错误，正确答案是 <b>' + q.answer + '</b>';
+      html += '<div class="feedback show ' + fbClass + '">' + fbText + '</div>';
+    }
+
+    // Buttons
+    html += '<div>';
+    if (!answeredThis) {
+      html += '<button class="btn btn-primary btn-next" id="btnSubmit" disabled>确认提交</button>';
+    } else {
+      if (currentIndex < TOTAL) {
+        html += '<button class="btn btn-primary btn-next" id="btnNext">下一题</button>';
+      } else {
+        html += '<button class="btn btn-primary btn-next" id="btnNext">查看成绩</button>';
+      }
+    }
+    html += '</div>';
+
+    html += '</div>'; // end card
+    main.innerHTML = html;
+
+    // Bind option clicks (single / multi)
+    if (!answeredThis) {
+      var opts = main.querySelectorAll('.option');
+      opts.forEach(function(el) {
+        el.addEventListener('click', function() {
+          if (q.type === 'single') {
+            opts.forEach(function(o) { o.classList.remove('selected'); });
+            el.classList.add('selected');
+            answers[qid] = el.dataset.letter;
+          } else {
+            // multi-select toggle
+            el.classList.toggle('selected');
+            var selected = main.querySelectorAll('.option.selected');
+            var letters = [];
+            selected.forEach(function(o) { letters.push(o.dataset.letter); });
+            letters.sort();
+            answers[qid] = letters.join('');
+          }
+          document.getElementById('btnSubmit').disabled = !answers[qid];
+        });
+      });
+    }
+
+    // Bind TF buttons
+    if (!answeredThis) {
+      var tfBtns = main.querySelectorAll('.tf-btn');
+      tfBtns.forEach(function(el) {
+        el.addEventListener('click', function() {
+          tfBtns.forEach(function(b) { b.classList.remove('selected'); });
+          el.classList.add('selected');
+          answers[qid] = el.dataset.value;
+          document.getElementById('btnSubmit').disabled = false;
+        });
+      });
+    }
+
+    // Bind submit button
+    var btnSubmit = document.getElementById('btnSubmit');
+    if (btnSubmit) {
+      btnSubmit.addEventListener('click', function() {
+        submitAnswer(q);
+      });
+    }
+
+    // Bind next button
+    var btnNext = document.getElementById('btnNext');
+    if (btnNext) {
+      btnNext.addEventListener('click', function() {
+        currentIndex++;
+        render();
+      });
+    }
+  }
+
+  function buildTFButton(value, label, userAns, answeredThis, correctAns) {
+    var cls = 'tf-btn';
+    if (answeredThis) {
+      if (value === correctAns) cls += ' correct';
+      else if (userAns === value && value !== correctAns) cls += ' wrong';
+    } else if (userAns === value) {
+      cls += ' selected';
+    }
+    return '<div class="' + cls + '" data-value="' + value + '">' + label + '</div>';
+  }
+
+  function submitAnswer(q) {
+    var userAns = answers[q.id] || '';
+    if (!userAns) return;
+
+    var correct = false;
+    if (q.type === 'multi') {
+      correct = userAns.split('').sort().join('') === q.answer;
+    } else {
+      correct = userAns === q.answer;
+    }
+
+    if (correct) score++;
+    answered[q.id] = true;
+    updateProgress();
+    render();
+  }
+
+  function updateProgress() {
+    var done = Object.keys(answered).length;
+    var pct = Math.round((done / TOTAL) * 100);
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = '第 ' + currentIndex + ' / ' + TOTAL + ' 题';
+    scoreLabel.textContent = '已答对：' + score;
+  }
+
+  // ── Result ─────────────────────────────────
+  function showResult() {
+    progressWrap.classList.add('hidden');
+    var singleTotal = 0, singleCorrect = 0;
+    var tfTotal = 0, tfCorrect = 0;
+    var multiTotal = 0, multiCorrect = 0;
+
+    for (var i = 0; i < TOTAL; i++) {
+      var q = QUESTIONS[i];
+      var userAns = answers[q.id] || '';
+      var correct = false;
+      if (q.type === 'multi') {
+        correct = userAns.split('').sort().join('') === q.answer;
+      } else {
+        correct = userAns === q.answer;
+      }
+      if (q.type === 'single') { singleTotal++; if (correct) singleCorrect++; }
+      else if (q.type === 'truefalse') { tfTotal++; if (correct) tfCorrect++; }
+      else { multiTotal++; if (correct) multiCorrect++; }
+    }
+
+    var pct = Math.round((score / TOTAL) * 100);
+    var gradeClass = pct >= 80 ? 'good' : (pct >= 60 ? 'ok' : 'low');
+
+    var html = '<div class="card result-wrap">';
+    html += '<div class="result-title">答题完成</div>';
+    html += '<div class="result-total">' + score + '<span> / ' + TOTAL + '</span></div>';
+    html += '<div style="font-size:1rem;color:#7f8c8d;">正确率 <b class="result-score ' + gradeClass + '">' + pct + '%</b></div>';
+
+    html += '<table class="result-table">';
+    html += '<thead><tr><th>题型</th><th>题数</th><th>答对</th><th>正确率</th></tr></thead>';
+    html += '<tbody>';
+    html += buildResultRow('单选题', singleTotal, singleCorrect);
+    html += buildResultRow('判断题', tfTotal, tfCorrect);
+    html += buildResultRow('多选题', multiTotal, multiCorrect);
+    html += '</tbody></table>';
+
+    html += '<div style="margin-top:16px;">';
+    html += '<button class="btn btn-restart" id="btnRestart">重新开始</button>';
+    html += '</div>';
+    html += '</div>';
+
+    main.innerHTML = html;
+
+    document.getElementById('btnRestart').addEventListener('click', function() {
+      currentIndex = 0;
+      answers = {};
+      answered = {};
+      score = 0;
+      render();
+    });
+  }
+
+  function buildResultRow(label, total, correct) {
+    var pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+    var cls = pct >= 80 ? 'good' : (pct >= 60 ? 'ok' : 'low');
+    return '<tr><td>' + label + '</td><td>' + total + '</td><td>' + correct + '</td><td class="result-score ' + cls + '">' + pct + '%</td></tr>';
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ── Init ──────────────────────────────────
+  render();
+
+  // ── Register Service Worker ───────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+  }
+})();
+</script>
+</body>
+</html>
